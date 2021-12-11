@@ -90,7 +90,7 @@ public class PlayerMovement : MonoBehaviour
 
         characterController.Move(direction * speed * Time.fixedDeltaTime);
         velocity.y += gravity * Time.fixedDeltaTime;
-        characterController.Move(velocity * Time.fixedDeltaTime);
+        characterController.Move(velocity * Time.fixedDeltaTime * 0.5f);
 
         // fire event
         if (Input.GetButtonDown("Fire1")) {
