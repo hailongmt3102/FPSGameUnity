@@ -7,7 +7,6 @@ namespace PlayerCore
         private Animator animator;
         private float speed, x_velocity, y_velocity, z_velocity;
         private bool landing, grounding;
-        private int gun_type, gun_state;
 
         public CharacterAnimatorController(Animator animator,
                 float speed = 0f,
@@ -15,9 +14,7 @@ namespace PlayerCore
                 float y_velocity = 0f,
                 float z_velocity = 0f,
                 bool landing = false,
-                bool grounding = false,
-                int gun_state = 0,
-                int gun_type = 0
+                bool grounding = false
         )
         {
             this.animator = animator;
@@ -27,11 +24,9 @@ namespace PlayerCore
             this.z_velocity = z_velocity;
             this.landing = landing;
             this.grounding = grounding;
-            this.gun_state = gun_state;
-            this.gun_type = gun_type;
         }
 
-        public void movement(float speed, float x_velocity, float y_velocity, float z_velocity, bool grounding) {
+        public void move(float speed, float x_velocity, float y_velocity, float z_velocity, bool grounding) {
             if (this.speed != speed)
             {
                 this.speed = speed;
@@ -79,15 +74,18 @@ namespace PlayerCore
         }
 
         public void Walk(float x_velocity, float z_velocity) {
+            float center = 0f;
             if (this.x_velocity != x_velocity) {
-                this.x_velocity = x_velocity;
-                animator.SetFloat("x_velocity", x_velocity);
+                center = Mathf.Lerp(this.x_velocity, x_velocity, .2f);
+                this.x_velocity = center;
+                animator.SetFloat("x_velocity", center);
             }
 
             if (this.z_velocity != z_velocity)
             {
-                this.z_velocity = z_velocity;
-                animator.SetFloat("z_velocity", z_velocity);
+                center = Mathf.Lerp(this.z_velocity, z_velocity, .2f);
+                this.z_velocity = center;
+                animator.SetFloat("z_velocity", center);
             }
         }
         
@@ -124,34 +122,17 @@ namespace PlayerCore
             }
         }
 
-        public void fireEvent(int guntype, int gunstate) {
-            // pistol gun
-            if (gun_type != guntype) {
-                gun_type = guntype;
-                animator.SetInteger("guntype", guntype);
-            }
-            if (gun_state != gunstate) {
-                gun_state = gunstate;
-                animator.SetInteger("gunstate", gunstate);
-            }
+        public void Fire() {
+            animator.SetBool("firing", true);
         }
 
-        public void EnableHandLayer() {
-            if (animator.layerCount > 1)
-                animator.SetLayerWeight(1, 1);
+        public void StopFiring() {
+            animator.SetBool("firing", false);
         }
 
-        public void DisableHandLayer() {
-            if (animator.layerCount > 1) 
-                animator.SetLayerWeight(1, 0);
-        }
-
-        public void EnableFire() {
-            
-        }
-
-        public void DisableFire() {
-           
+        public void Reload()
+        {
+            animator.SetTrigger("reloading");
         }
     }
 }

@@ -1,10 +1,18 @@
 using UnityEngine;
 using PlayerCore;
-using System.Collections.Generic;
+using System.Collections;
 
 [RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(PlayerShoot))]
+[RequireComponent(typeof(PlayerInformation))]
+[System.Obsolete]
 public class PlayerMovement : MonoBehaviour
 {
+    [System.Obsolete]
+    private PlayerShoot playerShootNetwork;
+
+    private PlayerInformation playerInformation;
+
     [SerializeField]
     private float speed = 3f;
     public float gravity = -9.81f;
@@ -31,35 +39,37 @@ public class PlayerMovement : MonoBehaviour
     private CharacterAnimatorController animatorController;
 
     // falling variable
-    private float landingTime = 1f;
     private bool isLanding = false;
     private bool falling = false;
 
     // fire event
-    // pistol prefab
-    public GameObject pistolItem;
-    public GameObject pistolHandle;
-    // removing gun
-    private bool isremovingGun = false;
-    private float removingGunTime = 0.8f;
-
     // gun of player 
-    // 0 is nothing, 1 is pistol
-    private int guntype = 0;
+    private bool reloading = false;
+    private bool firing = false;
+    private float reloadingTime = 1.7f;
+    private float firingTime = 0.2f;
 
-    private float firingTime = 0;
+    // pistol prefab
+    public GameObject reloadPistol;
+    
+    // pistol logic
+    private Pistol pistol;
+    
     public GameObject bullet;
     public Transform firePoint;
     public float fireSpeed = 5f;
 
+    [System.Obsolete]
     void Start()
     {
         // get some component
         characterController = GetComponent<CharacterController>();
-        characterAnimator = GetComponentInChildren<Animator>();
+        characterAnimator = GetComponent<Animator>();
         animatorController = new CharacterAnimatorController(characterAnimator);
+        pistol = new Pistol();
+        playerShootNetwork = GetComponent<PlayerShoot>();
+        playerInformation = GetComponent<PlayerInformation>();
     }
-
     void FixedUpdate()
     {
         // check the layer of ground to detect grounding status
@@ -77,7 +87,6 @@ public class PlayerMovement : MonoBehaviour
         // jumping input
         if (Input.GetButtonDown("Jump") && isGrounding)
         {
-            Debug.Log("jump");
             velocity.y = Mathf.Abs(JumpHeight * -2f * gravity);
             isGrounding = false;
         }
@@ -91,9 +100,8 @@ public class PlayerMovement : MonoBehaviour
             velocity.y += gravity * Time.fixedDeltaTime;
             characterController.Move(velocity * Time.fixedDeltaTime * 0.5f);
         }
-
         // set animator
-        animatorController.movement(Mathf.Abs(_zMove) + Mathf.Abs(_xMove), _xMove, velocity.y, _zMove, isGrounding);
+        animatorController.move(Mathf.Abs(_zMove) + Mathf.Abs(_xMove), _xMove, velocity.y, _zMove, isGrounding);
     }
 
     private void CheckGroundingPosition() {
@@ -106,8 +114,8 @@ public class PlayerMovement : MonoBehaviour
             {
                 // on landing
                 isLanding = true;
-                landingTime = 1f;
                 animatorController.Landing();
+                StartCoroutine("LandingComplete");
             }
         }
 
@@ -118,24 +126,21 @@ public class PlayerMovement : MonoBehaviour
     }
 
     private void CounterEvent() {
-        // check landing state
-        if (isLanding)
-        {
-            landingTime -= Time.fixedDeltaTime;
-            if (landingTime < 0f)
-            {
-                // finish landing state
-                isLanding = false;
-                animatorController.DisableLanding();
+        if (reloading) {
+            reloadingTime -= Time.fixedDeltaTime;
+            if (reloadingTime <= 0) {
+                // reloading complete 
+                pistol.Reload();
+                reloading = false;
+                disableReloadPrefab();
+                playerInformation.UpdateCurrentBullet(pistol.currentBullet);
             }
         }
-        if (isremovingGun) {
-            removingGunTime -= Time.fixedDeltaTime;
-            if (removingGunTime < 0f) {
-                isremovingGun = false;
-                // disable hand layer animation
-                animatorController.DisableHandLayer();
-                removePistol();
+        if (firing) {
+            firingTime -= Time.fixedDeltaTime;
+            if (firingTime <= 0) {
+                firing = false;
+                animatorController.StopFiring();
             }
         }
     }
@@ -143,44 +148,64 @@ public class PlayerMovement : MonoBehaviour
     // detect some input from the player to a pistol
     private void GunEvent()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1))
+        if (Input.GetMouseButtonDown(0))
         {
-            // button 1 was pressed
-            // take the pistol if not holding it
-            if (guntype != 1)
+            // fire event
+            if (firing)
             {
-                drawPistol();
-                // set animation for pistol
-                animatorController.EnableHandLayer();
-                animatorController.fireEvent(1, 0);
-                isremovingGun = false;
+                return;
+            }
+            if (pistol.Fire())
+            {
+                // can fire
+                // stop reload gun if reloading
+                if (reloading) { 
+                    reloading = false;
+                    disableReloadPrefab();
+                }
+                // set firing bool and time
+                firing = true;
+                firingTime = 0.2f;
+                Fire();
+                animatorController.Fire();
+                playerInformation.UpdateCurrentBullet(pistol.currentBullet);
             }
         }
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            // button 1 was pressed
-            // take the pistol if not holding it
-            if (guntype != 2)
-            {
-                // set animation for pistol
-                animatorController.fireEvent(1, 4);
-                // removing time counter
-                isremovingGun = true;
-                removingGunTime = 0.8f;
+        else if (Input.GetKeyDown(KeyCode.R)) {
+            // reload gun
+            if (!reloading) {
+                reloading = true;
+                reloadingTime = 1.7f;
+                animatorController.Reload();
+                enableReloadPrefab();
             }
         }
-        if (Input.GetButtonDown("Fire1")) { 
-
-        }
+        
     }
 
-    private void drawPistol() {
-        pistolItem.SetActive(false);
-        pistolHandle.SetActive(true);
+    private void enableReloadPrefab() {
+        reloadPistol.SetActive(true);
     }
 
-    private void removePistol() {
-        pistolItem.SetActive(true);
-        pistolHandle.SetActive(false);
+    private void disableReloadPrefab() {
+        reloadPistol.SetActive(false);
+    }
+
+    [System.Obsolete]
+    private void Fire() {
+        playerShootNetwork.Shoot(pistol.getDamage(), pistol.getRange());
+    }
+
+    // some callback functions
+    // callback after landing state complete
+    IEnumerator LandingComplete()
+    {
+        yield return new WaitForSeconds(1f);
+        isLanding = false;
+        animatorController.DisableLanding();
+    }
+
+    public void Respawn() {
+        pistol.Reload();
     }
 }

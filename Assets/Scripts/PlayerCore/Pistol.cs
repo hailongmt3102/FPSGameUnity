@@ -2,27 +2,31 @@
 {
     class Pistol : Weapon
     {
-        public Pistol() : base("pistol", 7, 7, 10, 1, 0) { 
+        public Pistol() : base("pistol", 7, 7, 10, 10, 0) {
         }
 
-        public override bool CheckCooldown()
+        public override bool Fire()
         {
-            return cooldownCounter <= 0 ? true : false;
+            if (currentBullet > 0) {
+                currentBullet -= 1;
+                return true;
+            }
+            return false;
         }
 
-        public override void DecreaseTime(float deltaTime)
+        public override int getDamage()
         {
-            cooldownCounter -= deltaTime;
+            return this.damage;
+        }
+
+        public override float getRange()
+        {
+            return this.range;
         }
 
         public override void Reload()
         {
             currentBullet = numOfBullet;
-        }
-
-        public override void SetCooldown()
-        {
-            cooldownCounter = cooldownTime;
         }
     }
 }
