@@ -4,7 +4,6 @@ using UnityEngine.Networking;
 [System.Obsolete]
 [RequireComponent(typeof(PlayerInformation))]
 [RequireComponent(typeof(NetworkIdentity))]
-[RequireComponent(typeof(PlayerInformation))]
 public class PlayerSetup : NetworkBehaviour
 {
     [SerializeField]
@@ -13,6 +12,9 @@ public class PlayerSetup : NetworkBehaviour
     [SerializeField]
     private GameObject[] disableGameObject;
 
+    [SerializeField]
+    private GameObject[] disableLocalComponents;
+
     private Camera SceneCamera;
 
     private string RemoteLayerName = "RemotePlayer";
@@ -20,6 +22,11 @@ public class PlayerSetup : NetworkBehaviour
     public GameObject crosshair;
 
     private GameObject crosshairInstance;
+
+    // canvas have information of player
+    private CanvasInformation playerInformation;
+
+    private Vector3 startPos;
 
     private void Start()
     {
@@ -33,16 +40,45 @@ public class PlayerSetup : NetworkBehaviour
             SceneCamera.gameObject.SetActive(false);
             // create crosshair
             crosshairInstance = Instantiate(crosshair);
+            DisableLocalObject();
+            ActiveMinimapRef();
         }
         gameObject.GetComponent<PlayerInformation>().islocalPlayer = isLocalPlayer;
+
+        playerInformation = GameObject.Find("_playerInformation").GetComponent<CanvasInformation>();
+        if (playerInformation == null)
+        {
+            Debug.LogError("Player setup : Can't find information canvas");
+        }
+        else {
+            // anable information canvas and refresh all value.
+            playerInformation.Refresh();
+            playerInformation.canvas.gameObject.SetActive(true);
+        }
+    }
+
+    private void ActiveMinimapRef() {
+        try { 
+            GameObject.Find("MinimapCamera").GetComponent<Minimap>().playerRef = transform;
+        }catch{
+            Debug.LogError("Player setup: No 'MinimapCamera' object");
+        }
     }
 
     public override void OnStartClient()
     {
         string netID = GetComponent<NetworkIdentity>().netId.ToString();
         PlayerInformation player = GetComponent<PlayerInformation>();
-        GameManager.RegisterPlayer(netID, player);
+        startPos = GameManager.RegisterPlayer(netID, player);
+        transform.GetComponent<PlayerInformation>().startPos = startPos;
     }
+
+    private void DisableLocalObject() {
+        foreach (GameObject obj in disableLocalComponents) {
+            obj.SetActive(false);
+        }
+    }
+
 
     private void DisableComponents() {
         foreach (Behaviour item in disableBehavior)
@@ -69,5 +105,6 @@ public class PlayerSetup : NetworkBehaviour
 
         GameManager.RemovePlayer(transform.name);
         Destroy(crosshairInstance);
+        playerInformation.canvas.gameObject.SetActive(false);
     }
 }

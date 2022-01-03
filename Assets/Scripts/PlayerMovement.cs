@@ -14,7 +14,7 @@ public class PlayerMovement : MonoBehaviour
     private PlayerInformation playerInformation;
 
     [SerializeField]
-    private float speed = 3f;
+    private float speed = 4f;
     public float gravity = -9.81f;
 
     // grounding transfrom of the character.
@@ -205,7 +205,13 @@ public class PlayerMovement : MonoBehaviour
         animatorController.DisableLanding();
     }
 
-    public void Respawn() {
+    public void Respawn(Vector3 pos) {
         pistol.Reload();
+        SetPosition(pos);
+    }
+
+    public void SetPosition(Vector3 pos) {
+        Debug.Log("move to " + pos);
+        characterController.Move(pos - transform.position);
     }
 }

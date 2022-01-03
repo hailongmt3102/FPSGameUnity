@@ -2,7 +2,7 @@
 {
     class Pistol : Weapon
     {
-        public Pistol() : base("pistol", 7, 7, 10, 10, 0) {
+        public Pistol() : base("pistol", 7, 7, 10, 100, 0) {
         }
 
         public override bool Fire()

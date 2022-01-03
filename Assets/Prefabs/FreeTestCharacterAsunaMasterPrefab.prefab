@@ -1793,6 +1793,7 @@ GameObject:
   - component: {fileID: 8834905446974005571}
   - component: {fileID: 6211417652342344649}
   - component: {fileID: 191542285274646998}
+  - component: {fileID: 4889790579784008069}
   m_Layer: 6
   m_Name: FreeTestCharacterAsunaMasterPrefab
   m_TagString: Player
@@ -1911,6 +1912,7 @@ MonoBehaviour:
   - {fileID: 6211417652342344649}
   - {fileID: 191542285274646998}
   disableGameObject: []
+  disableLocalComponents: []
   crosshair: {fileID: 7361386980634533346, guid: 7defa554a4b336d4f998ceb9f63ac324, type: 3}
 --- !u!114 &4743733367699620204
 MonoBehaviour:
@@ -1966,7 +1968,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a066e932a9c338b42b7f507dc69102ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 3
+  speed: 4
   gravity: -9.81
   grounding: {fileID: 102859378830329744}
   groundRadius: 0.1
@@ -1993,7 +1995,24 @@ MonoBehaviour:
   cam: {fileID: 102859378108525616}
   mask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 191
+--- !u!114 &4889790579784008069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 102859377922220400}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb1ac1317f491594e8da5265eaefb2b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHeath: 100
+  islocalPlayer: 0
+  linePrefabs: {fileID: 3149074296933082038, guid: 38dea3df297483b43b60f6c00cfedc5f, type: 3}
+  playerCamera: {fileID: 102859378108525631}
+  startPos: {x: 0, y: 0, z: 0}
 --- !u!1 &102859377926385524
 GameObject:
   m_ObjectHideFlags: 0
@@ -2544,7 +2563,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 102859378108525629}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.055, y: 1.778, z: 0.624}
+  m_LocalPosition: {x: 0.055, y: 2.053, z: -0.339}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 102859377922220404}
@@ -2575,7 +2594,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 40
   orthographic: 0
   orthographic size: 5
   m_Depth: -1

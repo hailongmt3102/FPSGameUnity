@@ -25,13 +25,12 @@ public class PlayerShoot : NetworkBehaviour
             if (hit.collider.tag == "Player") {
                 CmdPlayerShoot(hit.collider.name, damage);
             }
-            Debug.Log("hit " + hit.collider.name);
         }
     }
 
     [Command]
     private void CmdPlayerShoot(string Id, int damage) {
         PlayerInformation player = GameManager.getPlayer(Id);
-        player.TakeDamage(damage);
+        player.RpcTakeDamage(damage);
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -20,25 +21,86 @@ public class PlayerInformation : NetworkBehaviour
     public bool islocalPlayer;
     private CanvasInformation canvasInformation;
 
+    private bool cheating = false;
+    private LineRenderer lineCheating;
+    public GameObject linePrefabs;
+
+    public Camera playerCamera;
+
+    public Vector3 startPos;
+    private GameObject finishMatch;
+
     private void Awake()
     {
         currentHeath = maxHeath;
         kill = dead = 0;
         canvasInformation = GameObject.Find("_playerInformation").GetComponent<CanvasInformation>();
+        finishMatch = GameObject.Find("ObjectReference").GetComponent<ObjectReference>().finishMatch;
+        if (canvasInformation == null)
+        {
+            Debug.LogError("Player Information: No canvasInformation reference");
+        }
+        if (finishMatch == null) {
+            Debug.LogError("Player Information: No finishmatch reference");
+        }
     }
 
-    public void TakeDamage(int amount) {
+    private void OpenCheatingMode() {
+        cheating = true;
+        if (lineCheating == null) {
+            lineCheating = Instantiate(linePrefabs, transform.position, transform.rotation).GetComponent<LineRenderer>();
+            lineCheating.transform.position = new Vector3(0, 1.8f, 0);
+            lineCheating.transform.rotation = Quaternion.identity;
+        }
+    }
+
+    private void CloseCheatingMode() {
+        cheating = false;
+        Destroy(lineCheating.gameObject);
+        lineCheating = null;
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyUp(KeyCode.P) && islocalPlayer) {
+            if (cheating) CloseCheatingMode(); 
+            else OpenCheatingMode();
+        }
+
+        if (Input.GetKeyDown(KeyCode.K)) {
+            RpcTakeDamage(1000);
+        }
+
+        if (cheating)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                PlayerInformation player = GameManager.getPlayerByIndex(i);
+                Vector3 newpos;
+                if (player != null)
+                    newpos = player.transform.position;
+                else
+                    newpos = Vector3.zero;
+                lineCheating.SetPosition(i, newpos);
+            };
+        }
+    }
+
+    [ClientRpc]
+    public void RpcTakeDamage(int amount) {
         currentHeath -= amount;
         if (currentHeath < 0) {
             currentHeath = 0;
             GameManager.AnyoneDead(transform.name);
         }
-        canvasInformation.UpdateCurrentHeath((float)currentHeath / maxHeath);
+        if (islocalPlayer)
+            canvasInformation.UpdateCurrentHeath((float)currentHeath / maxHeath);
     }
 
-    public void GoodGame(bool iswin)
+    [ClientRpc]
+    public void RpcGoodGame(bool iswin)
     {
-        Debug.Log(transform.name + " win ? " + iswin.ToString());
+        if (!islocalPlayer) return;
         if (iswin)
         {
             kill += 1;
@@ -46,24 +108,28 @@ public class PlayerInformation : NetworkBehaviour
         else {
             dead += 1;
         }
-        if (islocalPlayer) {
-            canvasInformation.UpdateLocalPlayerKill(kill);
-            canvasInformation.UpdateRemotePlayerKill(dead);
-        }
-        Respawn();
+        canvasInformation.UpdateLocalPlayerKill(kill);
+        canvasInformation.UpdateRemotePlayerKill(dead);
+
+        // show finish UI
+        ShowUIfinishMatch(iswin);
     }
 
-    private void Respawn() {
-        Transform respawnPoint = NetworkManager.singleton.GetStartPosition();
-        transform.position = respawnPoint.position;
-        transform.rotation = Quaternion.identity;
+    private void ShowUIfinishMatch(bool iswin) {
+        StartCoroutine("Respawn");
+        finishMatch.SetActive(true);
+    }
 
-        // update some variable
-        transform.GetComponent<PlayerMovement>().Respawn();
-        if (islocalPlayer) {
-            canvasInformation.UpdateCurrentBullet(7);
-            canvasInformation.UpdateCurrentHeath(1);
-        }
+
+    IEnumerator Respawn() {
+        yield return new WaitForSeconds(2);
+        currentHeath = maxHeath;
+        transform.GetComponent<PlayerMovement>().Respawn(startPos);
+
+        // update some variable on UI
+        canvasInformation.UpdateCurrentBullet(7);
+        canvasInformation.UpdateCurrentHeath(1);
+        finishMatch.SetActive(false);
     }
 
     public void UpdateCurrentBullet(int amount)
