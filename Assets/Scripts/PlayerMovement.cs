@@ -3,8 +3,6 @@ using PlayerCore;
 using System.Collections;
 
 [RequireComponent(typeof(CharacterController))]
-[RequireComponent(typeof(PlayerShoot))]
-[RequireComponent(typeof(PlayerInformation))]
 [System.Obsolete]
 public class PlayerMovement : MonoBehaviour
 {
@@ -55,9 +53,18 @@ public class PlayerMovement : MonoBehaviour
     // pistol logic
     private Pistol pistol;
     
-    public GameObject bullet;
-    public Transform firePoint;
     public float fireSpeed = 5f;
+
+    // sound variable
+    public AudioSource fireAudio;
+    public AudioSource reloadAudio;
+
+    // variable for AI mode
+    // don't care in 2 player mode
+    [SerializeField]
+    private bool twoPlayerMode = true;
+    [SerializeField]
+    private PlayerInAIMode aiMode;
 
     [System.Obsolete]
     void Start()
@@ -67,8 +74,11 @@ public class PlayerMovement : MonoBehaviour
         characterAnimator = GetComponent<Animator>();
         animatorController = new CharacterAnimatorController(characterAnimator);
         pistol = new Pistol();
-        playerShootNetwork = GetComponent<PlayerShoot>();
-        playerInformation = GetComponent<PlayerInformation>();
+        if (twoPlayerMode) {
+            playerShootNetwork = GetComponent<PlayerShoot>();
+            playerInformation = GetComponent<PlayerInformation>();
+            SetPosition(playerInformation.startPos);
+        }
     }
     void FixedUpdate()
     {
@@ -133,7 +143,10 @@ public class PlayerMovement : MonoBehaviour
                 pistol.Reload();
                 reloading = false;
                 disableReloadPrefab();
-                playerInformation.UpdateCurrentBullet(pistol.currentBullet);
+                if (twoPlayerMode)
+                    playerInformation.UpdateCurrentBullet(pistol.currentBullet);
+                else
+                    aiMode.UpdateBullet(pistol.currentBullet);
             }
         }
         if (firing) {
@@ -168,7 +181,10 @@ public class PlayerMovement : MonoBehaviour
                 firingTime = 0.2f;
                 Fire();
                 animatorController.Fire();
-                playerInformation.UpdateCurrentBullet(pistol.currentBullet);
+                if (twoPlayerMode)
+                    playerInformation.UpdateCurrentBullet(pistol.currentBullet);
+                else
+                    aiMode.UpdateBullet(pistol.currentBullet);
             }
         }
         else if (Input.GetKeyDown(KeyCode.R)) {
@@ -178,6 +194,7 @@ public class PlayerMovement : MonoBehaviour
                 reloadingTime = 1.7f;
                 animatorController.Reload();
                 enableReloadPrefab();
+                reloadAudio.Play();
             }
         }
         
@@ -193,7 +210,12 @@ public class PlayerMovement : MonoBehaviour
 
     [System.Obsolete]
     private void Fire() {
-        playerShootNetwork.Shoot(pistol.getDamage(), pistol.getRange());
+        if (twoPlayerMode)
+            playerShootNetwork.Shoot(pistol.getDamage(), pistol.getRange());
+        else
+            aiMode.Shoot(pistol.getDamage(), pistol.getRange());    
+        // call audio
+        fireAudio.Play();
     }
 
     // some callback functions

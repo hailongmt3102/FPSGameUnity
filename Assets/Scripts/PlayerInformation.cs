@@ -30,6 +30,8 @@ public class PlayerInformation : NetworkBehaviour
     public Vector3 startPos;
     private GameObject finishMatch;
 
+    private GameObject bloodPanel;
+
     private void Awake()
     {
         currentHeath = maxHeath;
@@ -42,6 +44,14 @@ public class PlayerInformation : NetworkBehaviour
         }
         if (finishMatch == null) {
             Debug.LogError("Player Information: No finishmatch reference");
+        }
+        bloodPanel = GameObject.Find("ObjectReference").GetComponent<ObjectReference>().bloodPannel;
+        if (bloodPanel == null) { 
+            Debug.LogError("Player Information: No blood panel reference");
+        }
+        else
+        {
+            bloodPanel.SetActive(false);
         }
     }
 
@@ -67,9 +77,9 @@ public class PlayerInformation : NetworkBehaviour
             else OpenCheatingMode();
         }
 
-        if (Input.GetKeyDown(KeyCode.K)) {
-            RpcTakeDamage(1000);
-        }
+        //if (Input.GetKeyDown(KeyCode.K)) {
+        //    RpcTakeDamage(1000);
+        //}
 
         if (cheating)
         {
@@ -94,7 +104,16 @@ public class PlayerInformation : NetworkBehaviour
             GameManager.AnyoneDead(transform.name);
         }
         if (islocalPlayer)
+        {
             canvasInformation.UpdateCurrentHeath((float)currentHeath / maxHeath);
+            bloodPanel.SetActive(true);
+            StartCoroutine("DamagedFinish");
+        }
+    }
+
+    IEnumerator DamagedFinish() {
+        yield return new WaitForSeconds(1);
+        bloodPanel.SetActive(false);
     }
 
     [ClientRpc]
