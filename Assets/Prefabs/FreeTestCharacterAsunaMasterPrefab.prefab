@@ -1976,14 +1976,14 @@ MonoBehaviour:
   groundRadius: 0.1
   groundMask:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 520
   JumpHeight: 0.5
   reloadPistol: {fileID: 102859379249384759}
-  bullet: {fileID: 0}
-  firePoint: {fileID: 0}
   fireSpeed: 5
   fireAudio: {fileID: 4018123816522321963}
   reloadAudio: {fileID: 6180650320769068392}
+  twoPlayerMode: 1
+  aiMode: {fileID: 0}
 --- !u!114 &191542285274646998
 MonoBehaviour:
   m_ObjectHideFlags: 0

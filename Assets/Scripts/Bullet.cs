@@ -1,11 +1,26 @@
 using UnityEngine;
-using UnityEngine.Networking;
 
-public class Bullet : NetworkBehaviour
+public class Bullet : MonoBehaviour
 {
+    private Vector3 dir;
+    private float speed;
+    private int damage;
+    public void Setup(Vector3 dir, float speed, int damage) {
+        this.dir = dir;
+        this.speed = speed;
+        this.damage = damage;
+        Destroy(gameObject, 5f);
+    }
     void Update()
     {
-        if (Mathf.Abs(transform.position.x) > 100f || Mathf.Abs(transform.position.y) > 100f || Mathf.Abs(transform.position.z) > 100f)
-            Destroy(gameObject);
+        transform.Translate(dir * Time.deltaTime * speed);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.name == "Character") {
+            other.GetComponent<PlayerInAIMode>().ReveiveDamage(damage);
+        }
+        Destroy(gameObject);
     }
 }
