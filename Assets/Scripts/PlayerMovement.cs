@@ -79,6 +79,14 @@ public class PlayerMovement : MonoBehaviour
             playerInformation = GetComponent<PlayerInformation>();
             SetPosition(playerInformation.startPos);
         }
+        // try to get start pos
+        try
+        {
+            SetPosition(playerInformation.startPos);
+        }
+        catch {
+            Debug.Log("can't get start pos");
+        }
     }
     void FixedUpdate()
     {
@@ -206,6 +214,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void disableReloadPrefab() {
         reloadPistol.SetActive(false);
+        reloadAudio.Stop();
     }
 
     [System.Obsolete]
@@ -233,7 +242,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     public void SetPosition(Vector3 pos) {
-        Debug.Log("move to " + pos);
+        Debug.Log("move to " + pos.ToString());
         characterController.Move(pos - transform.position);
     }
 }

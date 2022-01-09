@@ -11,12 +11,43 @@ public class PlayerInAIMode : MonoBehaviour
     private CanvasInformation canvasInfor;
 
     public GameObject blood;
-    public GameObject diePannel;
+
+    public Transform playerCamera;
+    public LayerMask hitMask;
+
+    private RaycastHit hit;
+
+    public AIManager aimanager;
+    public PlayerMovement player;
+
+    public GameObject Shield;
+
+    private bool isShieldOn = false;
+    private float shieldTime = 10;
+
+    public GameObject ShieldEffectImage;
+
+    private bool isDead = false;
+
+    public GameObject diePanel;
+    public GameObject playerInfor;
 
     private void Start()
     {
         if (canvasInfor == null) {
             Debug.LogError("Player in AI mode: No canvas infor reference");
+        }
+        if (aimanager == null) { 
+            Debug.LogError("Player in AI mode: No Ai manager reference");
+
+        }
+    }
+    private void Update()
+    {
+        if (isShieldOn) {
+            shieldTime -= Time.deltaTime;
+            if (shieldTime <= 0)
+                CloseShield();
         }
     }
 
@@ -24,15 +55,26 @@ public class PlayerInAIMode : MonoBehaviour
         canvasInfor.UpdateCurrentBullet(value);
     }
 
+    [System.Obsolete]
     public void ReveiveDamage(int amount) {
-        currentHeath -= amount;
-        if (currentHeath < 0) {
-            currentHeath = 0;
-            Die();
+        if (isDead) return;
+        if (isShieldOn) {
+            // no damaged when shied is openning
+            ShieldEffect();
+            return;
         }
         blood.SetActive(true);
         // update heath information
         canvasInfor.UpdateCurrentHeath((float)currentHeath / maxHeath);
+        StartCoroutine(DamagedFinish());
+
+        // update current heath
+        currentHeath -= amount;
+        if (currentHeath <= 0) {
+            currentHeath = 0;
+            Die();
+            Debug.Log("die");
+        }
     }
 
     IEnumerator DamagedFinish() {
@@ -40,30 +82,82 @@ public class PlayerInAIMode : MonoBehaviour
         blood.SetActive(false);
     }
 
-    [System.Obsolete]
     private void Die() {
         // disable some componenet
-        transform.GetComponent<PlayerMovement>().enabled = false;
-        canvasInfor.gameObject.SetActive(false);
+        player.enabled = false;
+        playerInfor.SetActive(false);
 
-        diePannel.SetActive(true);
+        diePanel.SetActive(true);
         StartCoroutine(Respawn());
+
+        isDead = true;
     }
 
-    [System.Obsolete]
     IEnumerator Respawn() {
         yield return new WaitForSeconds(3);
-        PlayerMovement player = transform.GetComponent<PlayerMovement>();
         player.enabled = true;
         player.Respawn(new Vector3(0, 0.3f, 0));
+        currentHeath = maxHeath;
 
+        diePanel.SetActive(false);
         canvasInfor.UpdateCurrentBullet(7);
         canvasInfor.UpdateCurrentHeath(1);
-        canvasInfor.gameObject.SetActive(true);
+        playerInfor.SetActive(true);
+
+        // clear all enemy
+        aimanager.Clear();
+
+        isDead = false;
     }
 
     public void Shoot(int damage, float range) {
-        // fire event
-        Debug.Log("fire");
+        // use raycast to check eny object 
+        if (Physics.Raycast(playerCamera.position, playerCamera.forward, out hit, range, hitMask))
+        {
+            if (hit.collider.tag == "Enemy") {
+                hit.collider.GetComponent<StateMachine>().Damaged(damage);
+            }
+        }
+    }
+    private void ShieldEffect() {
+        ShieldEffectImage.SetActive(true);
+        StartCoroutine(CloseShieldEffect());
+    }
+
+    IEnumerator CloseShieldEffect() {
+        yield return new WaitForSeconds(1);
+        ShieldEffectImage.SetActive(false);
+    }
+
+    private void OpenShield() {
+        shieldTime = 10f;
+        isShieldOn = true;
+        Shield.SetActive(true);
+    }
+
+    private void CloseShield() {
+        isShieldOn = false;
+        Shield.SetActive(false);
+    }
+
+    private void CollectHeathItem() {
+        currentHeath = maxHeath;
+        canvasInfor.UpdateCurrentHeath(1);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "HeathItem")
+        {
+            // collision with heath item
+            CollectHeathItem();
+            aimanager.RemoveItem(other.gameObject);
+        }
+        else if (other.tag == "ShieldItem") {
+            // collision with heath item
+            OpenShield();
+            aimanager.RemoveItem(other.gameObject);
+        }
+
     }
 }

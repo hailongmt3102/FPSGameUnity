@@ -27,9 +27,13 @@ public class PlayerSetup : NetworkBehaviour
     private CanvasInformation playerInformation;
 
     private Vector3 startPos;
+    private GameObject ExitBtn;
+
+    private GameObject EXIT;
 
     private void Start()
     {
+        ExitBtn = GameObject.Find("EXIT");
         if (!isLocalPlayer)
         {
             DisableComponents();
@@ -42,6 +46,9 @@ public class PlayerSetup : NetworkBehaviour
             crosshairInstance = Instantiate(crosshair);
             DisableLocalObject();
             ActiveMinimapRef();
+            // disable exit button
+            if (ExitBtn != null)
+                ExitBtn.SetActive(false);
         }
         gameObject.GetComponent<PlayerInformation>().islocalPlayer = isLocalPlayer;
 
@@ -71,6 +78,10 @@ public class PlayerSetup : NetworkBehaviour
         PlayerInformation player = GetComponent<PlayerInformation>();
         startPos = GameManager.RegisterPlayer(netID, player);
         transform.GetComponent<PlayerInformation>().startPos = startPos;
+
+        GameObject.Find("LockCursor").GetComponent<LockCursor>().LockCursorSetup();
+        EXIT = GameObject.Find("EXIT");
+        EXIT.SetActive(false);
     }
 
     private void DisableLocalObject() {
@@ -94,6 +105,10 @@ public class PlayerSetup : NetworkBehaviour
 
     private void AssignRemoteLayer() {
         gameObject.layer = LayerMask.NameToLayer(RemoteLayerName);
+        foreach (Transform child in transform.GetComponentsInChildren<Transform>()) 
+        {
+            child.gameObject.layer = LayerMask.NameToLayer(RemoteLayerName);
+        }
     }
 
 
@@ -106,5 +121,11 @@ public class PlayerSetup : NetworkBehaviour
         GameManager.RemovePlayer(transform.name);
         Destroy(crosshairInstance);
         playerInformation.canvas.gameObject.SetActive(false);
+
+        // enable exit button
+        if (ExitBtn != null)
+            ExitBtn.SetActive(true);
+        GameObject.Find("LockCursor").GetComponent<LockCursor>().LockCursorRelease();
+        EXIT.SetActive(true);
     }
 }
